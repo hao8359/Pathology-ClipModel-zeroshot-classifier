@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pathclip-zero-shot-classifier"
+version = "0.1.0"
+description = "Zero-shot classification and evaluation pipeline using PathCLIP / OpenCLIP"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "open-clip-torch",
+    "ftfy",
+    "regex",
+    "tqdm",
+    "scikit-learn",
+    "pandas",
+    "numpy",
+    "pillow",
+    "h5py",
+    "matplotlib",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]

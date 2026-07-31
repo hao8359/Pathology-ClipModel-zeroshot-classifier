@@ -1,0 +1,9 @@
+*.tar
+*.pt
+.git
+.gitignore
+__pycache__/
+.DS_Store
+cache/
+PathCap/
+lung_colon_image_set/
