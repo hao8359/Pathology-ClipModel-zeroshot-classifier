@@ -4,3 +4,5 @@ pathclip/
 *.sif
 *.tar
 *.log
+.venv_arm/
+wandb/

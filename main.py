@@ -4,13 +4,27 @@ import open_clip
 from torchvision import datasets
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import wandb
+
 
 def main():
     # 1. Automatically detect GPU / CPU (prevents hardcoded .cuda() errors)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")
 
-    # 2. Load model (Replace with the actual weight path on Bianca and remove author's cache_dir)
+    # 2. Initialize Weights & Biases (W&B) for logging
+    wandb.init(
+        project="pathclip-zero-shot-classifier", 
+        name="pathclip-zero-shot-eval",
+        config={
+            "model_path": "pathclip/pathclip-base.pt",
+            "dataset_path": "./lung_colon_image_set/Test Set",
+            "batch_size": 128,
+            "device": device,
+            "prompt_template": "a histopathology image showing {class_name}"
+        }
+    )
+    # 3. Load model (Replace with the actual weight path on Bianca and remove author's cache_dir)
     model_path = "pathclip/pathclip-base.pt" 
     model, _, preprocess = open_clip.create_model_and_transforms(
         'ViT-B-16', 
@@ -21,17 +35,17 @@ def main():
     model = model.to(device)
     model.eval()
 
-    # 3. Load your 25,000 test set images (batch read using ImageFolder)
+    # 4. Load your 25,000 test set images (batch read using ImageFolder)
     dataset_path = "./lung_colon_image_set/Test Set" 
     dataset = datasets.ImageFolder(dataset_path, transform=preprocess)
     dataloader = DataLoader(dataset, batch_size=128, shuffle=False, num_workers=4)
     
 
-    # 4. Create Text Prompts (matching your data classes)
+    # 5. Create Text Prompts (matching your data classes)
     class_names = dataset.classes  # Automatically get folder class names
     #text_label_list = [f"An image of {c.replace('_', ' ')}" for c in class_names]
     #print(f"Class labels: {text_label_list}")
-    # 1. 建立類別簡寫對應完整醫學專有名詞字典
+    # establish a mapping of class names to descriptive text
     label_mapping = {
         "colon_aca": "colon adenocarcinoma",
         "colon_n": "normal colon tissue",
@@ -40,16 +54,16 @@ def main():
         "lung_scc": "lung squamous cell carcinoma"
     }
 
-    # 2. 生成帶有病理語意的完整 Prompt
+    # create a list of descriptive text labels based on the mapping
     text_label_list = [
         f"a histopathology image showing {label_mapping.get(c, c)}" 
         for c in class_names
     ]
     print(f"Class labels: {text_label_list}")
-
+    wandb.config.update({"prompts": text_label_list})
     text = tokenizer(text_label_list).to(device)
 
-    # 5. Start Zero-shot evaluation (including feature extraction and matching)
+    # 6. Start Zero-shot evaluation (including feature extraction and matching)
     correct = 0
     total = 0
 
@@ -73,11 +87,17 @@ def main():
             correct += (predictions == labels).sum().item()
             total += labels.size(0)
 
-    # 6. Print final results
+    # 7. Print final results
     acc = 100.0 * correct / total
     print(f"\n==========================================")
     print(f"Zero-Shot Accuracy: {acc:.2f}% ({correct}/{total})")
     print(f"==========================================")
+    wandb.log({
+        "accuracy": acc,
+        "correct": correct,
+        "total": total
+    })
+    wandb.finish()
 
 if __name__ == "__main__":
     main()
