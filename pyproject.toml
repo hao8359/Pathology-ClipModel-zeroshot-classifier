@@ -19,7 +19,5 @@ dependencies = [
     "pillow",
     "h5py",
     "matplotlib",
+    "wandb",
 ]
-
-[tool.setuptools.packages.find]
-where = ["."]
