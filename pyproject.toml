@@ -21,3 +21,6 @@ dependencies = [
     "matplotlib",
     "wandb",
 ]
+
+[tool.uv]
+package = false

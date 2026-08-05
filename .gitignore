@@ -6,3 +6,5 @@ pathclip/
 *.log
 .venv_arm/
 wandb/
+error-log/
+output-log/

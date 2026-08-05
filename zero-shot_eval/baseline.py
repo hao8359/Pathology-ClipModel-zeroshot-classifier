@@ -18,7 +18,7 @@ def main():
         name="pathclip-zero-shot-eval",
         config={
             "model_path": "pathclip/pathclip-base.pt",
-            "dataset_path": "./lung_colon_image_set/Test Set",
+            "dataset_path": "./lung_colon_image_set/Train and Validation Set/lc_lung",
             "batch_size": 128,
             "device": device,
             "prompt_template": "a histopathology image showing {class_name}"
@@ -33,26 +33,35 @@ def main():
     )
     tokenizer = open_clip.get_tokenizer('ViT-B-16')
     model = model.to(device)
-    model.eval()
+    model.eval() # Set model to evaluation mode
 
     # 4. Load your 25,000 test set images (batch read using ImageFolder)
-    dataset_path = "./lung_colon_image_set/Test Set" 
+    dataset_path = "./lung_colon_image_set/Train and Validation Set/lc_lung" 
     dataset = datasets.ImageFolder(dataset_path, transform=preprocess)
     dataloader = DataLoader(dataset, batch_size=128, shuffle=False, num_workers=4)
     
 
     # 5. Create Text Prompts (matching your data classes)
     class_names = dataset.classes  # Automatically get folder class names
-    #text_label_list = [f"An image of {c.replace('_', ' ')}" for c in class_names]
-    #print(f"Class labels: {text_label_list}")
-    # establish a mapping of class names to descriptive text
+    text_label_list = [f"An image of {c.replace('_', ' ')}" for c in class_names]
+    print(f"Class labels: {text_label_list}")
+
+    #establish a mapping of class names to descriptive text
     label_mapping = {
-        "colon_aca": "colon adenocarcinoma",
-        "colon_n": "normal colon tissue",
-        "lung_aca": "lung adenocarcinoma",
-        "lung_n": "normal lung tissue",
-        "lung_scc": "lung squamous cell carcinoma"
+         "colon_aca": "colon adenocarcinoma",
+         "colon_n": "normal colon tissue",
+         "lung_aca": "lung adenocarcinoma",
+         "lung_n": "normal lung tissue",
+         "lung_scc": "lung squamous cell carcinoma"
     }
+    
+    #label_mapping = {
+    #    "colon_aca": "colon_aca",
+    #    "colon_n": "colon_n",
+    #    "lung_aca": "lung_aca",
+    #    "lung_n": "lung_n",
+    #    "lung_scc": "lung_scc"
+    #}
 
     # create a list of descriptive text labels based on the mapping
     text_label_list = [
