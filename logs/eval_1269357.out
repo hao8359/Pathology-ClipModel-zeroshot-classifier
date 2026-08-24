@@ -1,0 +1,14 @@
+Copying PathCLIP SIF container to node local storage (/tmp)...
+Starting Zero-Shot Evaluation with PathCLIP...
+Using device: cuda
+Class labels: ['a histopathology image showing normal liver tissue', 'a histopathology image showing liver hepatocellular carcinoma']
+Total tiles to evaluate: 101002
+
+Saved tile-level predictions to: ./WSI-Preprocessing/output/pipeline/de531777-915c-47bc-a3fd-dc59c10b2e54-01Z-00-DX1.FCF4A7E7-A0F9-4B5D-B751-D990703EA261.svs/tiles/zero_shot_predictions.csv
+
+==========================================
+Slide-Level Aggregated Probabilities:
+  - normal: 44.82%
+  - hcc: 55.18%
+Slide Prediction: hcc
+==========================================

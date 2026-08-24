@@ -1,0 +1,108 @@
+#!/bin/bash
+
+#SBATCH -A naiss2025-22-1584-gpu 
+#SBATCH -p gpu
+#SBATCH -N 1
+#SBATCH -c 32
+#SBATCH --gres=gpu:1
+#SBATCH --mem=128G
+#SBATCH -t 02:00:00
+#SBATCH -J liver_tiling
+#SBATCH -o logs/tiling_%j.out
+#SBATCH -e logs/tiling_%j.err
+
+set -euo pipefail
+
+echo "Starting tiling job: $(date)"
+echo "Running on node: $(hostname)"
+echo "TMPDIR=$TMPDIR"
+echo "CPUs: ${SLURM_CPUS_PER_TASK}"
+echo "nproc: $(nproc)"
+
+df -h "$TMPDIR"
+ls -ld "$TMPDIR"
+
+START=$SECONDS
+mkdir -p logs
+mkdir -p "$TMPDIR"
+mkdir -p "$TMPDIR/data1/svs"
+mkdir -p "$TMPDIR/output"
+
+BASE=/nobackup/proj/disk/deep-wetlands-data-2025/personal/pecorari/WSI-Preprocessing
+CODE=/nobackup/proj/disk/deep-wetlands-data-2025/personal/pecorari/WSI-Preprocessing/code
+
+echo "Copy start: $(date)"
+
+COPY_START=$(date +%s)
+
+cp -r "$BASE/code" "$TMPDIR"
+rsync -ah --info=progress2 "$BASE/data1/svs" "$TMPDIR/data1/svs" # skips files that are identical
+rsync -ah "$BASE/output/slide_metadata/" "$TMPDIR/output/slide_metadata"
+
+COPY_END=$(date +%s)
+
+COPY_TIME=$((COPY_END-COPY_START))
+
+echo "Copy time: ${COPY_TIME} seconds"
+
+# Check copied directories
+echo "Checking copied directories:"
+ls -ld "$TMPDIR"
+
+# Catch errors early by checking if the directories exist
+test -d "$TMPDIR/code"
+test -d "$TMPDIR/data1/svs"
+test -d "$BASE/output"
+
+#echo "Container start: $(date)"
+echo "Launching container: $(date +%s.%N)"
+t_launch=$(date +%s.%N)
+
+# Make sure bind-mount sources exist before Apptainer tries to mount them
+mkdir -p "$BASE/output"
+mkdir -p "$BASE/data1/svs"
+
+mkdir -p "$TMPDIR/output"
+
+
+# Activate code profiling
+export LINE_PROFILE=0
+
+# Run container
+
+apptainer exec \
+  --bind "$TMPDIR:$TMPDIR" \
+  --env BASE_PATH=$TMPDIR \
+  --env OUTPUT_DIR=$BASE/output \
+  --bind "$TMPDIR/code:/code" \
+/nobackup/proj/disk/deep-wetlands-data-2025/personal/pecorari/WSI-Preprocessing/liver_preprocessing_arm64.sif \
+   bash -c "cd /code && kernprof -l -o profile_output.lprof -m src.preprocess.pipeline.week6_4 && python -m line_profiler -rtmz profile_output.lprof"
+
+t_container_done=$(date +%s.%N)
+echo "Container total wall time: $(echo "$t_container_done - $t_launch" | bc) seconds"
+
+
+echo "Copying results back:"
+COPY_START=$(date +%s)
+
+mkdir -p "$BASE/output"
+
+if [ -d "$TMPDIR/output" ]; then
+    JOBS=$(nproc)
+    cd "$TMPDIR/output" || exit 1
+
+    find . -mindepth 1 -maxdepth 1 -print0 | \
+        xargs -0 -P "$JOBS" -I{} \
+        bash -c 'tar -cf - "$1" | tar -C "$2/output" -xf -' _ {} "$BASE"
+else
+    echo "ERROR: $TMPDIR/output does not exist"
+    exit 1
+fi       
+
+COPY_END=$(date +%s)
+
+COPY_TIME=$((COPY_END-COPY_START))
+
+echo "Copy time: ${COPY_TIME} seconds"
+echo "Total time: $((SECONDS - START)) seconds"
+

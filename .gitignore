@@ -4,7 +4,12 @@ pathclip/
 *.sif
 *.tar
 *.log
+*.log
+*.err
 .venv_arm/
+.venv/
 wandb/
 error-log/
 output-log/
+WSI-Preprocessing/test_data/svs/
+WSI-Preprocessing/output/

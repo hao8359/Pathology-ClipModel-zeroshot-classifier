@@ -1,0 +1,87 @@
+#!/bin/bash
+
+#SBATCH -A naiss2025-22-1584-cpu 
+#SBATCH -p node
+#SBATCH -N 1
+#SBATCH -c 16
+#SBATCH --mem=64G
+#SBATCH -t 02:00:00
+#SBATCH -J liver_tiling
+#SBATCH -o logs/tiling_%j.out
+#SBATCH -e logs/tiling_%j.err
+
+set -euo pipefail
+
+echo "Starting tiling job: $(date)"
+echo "Running on node: $(hostname)"
+echo "TMPDIR=$TMPDIR"
+echo "CPUs: ${SLURM_CPUS_PER_TASK}"
+echo "nproc: $(nproc)"
+
+df -h "$TMPDIR"
+ls -ld "$TMPDIR"
+
+START=$SECONDS
+mkdir -p logs
+mkdir -p "$TMPDIR"
+mkdir -p "$TMPDIR/data"
+mkdir -p "$TMPDIR/output"
+
+BASE=/nobackup/proj/disk/deep-wetlands-data-2025/personal/pecorari/WSI-Preprocessing
+CODE=/nobackup/proj/disk/deep-wetlands-data-2025/personal/pecorari/WSI-Preprocessing/code
+
+echo "Copy start: $(date)"
+
+cp -r "$BASE/code" "$TMPDIR"
+rsync -ah --info=progress2 "$BASE/data/svs" "$TMPDIR/data" # skips files that are identical
+rsync -ah "$BASE/output/slide_metadata/" "$TMPDIR/output/slide_metadata"
+
+echo "Copy end: $(date)"
+
+# Check copied directories
+echo "Checking copied directories:"
+ls -ld "$TMPDIR"
+
+# Catch errors early by checking if the directories exist
+test -d "$TMPDIR/code"
+test -d "$TMPDIR/data/svs"
+test -d "$BASE/output"
+
+echo "Container start: $(date)"
+
+mkdir -p "$TMPDIR/output"
+
+# Activate code profiling
+export LINE_PROFILE=1
+# Run container
+apptainer exec \
+  --bind "$TMPDIR:$TMPDIR" \
+  --env BASE_PATH=$TMPDIR \
+  --env OUTPUT_DIR=$BASE/output \
+  --env DATA_DIR=/data/svs \
+  --bind "$TMPDIR/data/svs:/data/svs" \
+  --bind "$TMPDIR/code:/code" \
+/proj/sens2025696/nobackup/pecorari/liver_preprocessing.sif \
+  bash -c "cd /code && kernprof -l -o profile_output.lprof -m src.preprocess.pipeline.week6_4 && python -m line_profiler -rtmz profile_output.lprof"
+
+echo "Copying results back:"
+COPY_START=$(date+%s)
+
+mkdir -p "$BASE/output"
+
+if [ -d "$TMPDIR/output" ]; then
+    rsync -avh --progress \
+        "$TMPDIR/output/" \
+        "$BASE/output/"
+else
+    echo "ERROR: $TMPDIR/output does not exist"
+exit 1
+
+fi
+
+COPY_END=$(date+%s)
+
+COPY_TIME=$((COPY_END-COPY_START))"
+
+echo "Copy time: ${COPY_TIME} seconds"
+echo "Total time: $((SECONDS - START)) seconds"

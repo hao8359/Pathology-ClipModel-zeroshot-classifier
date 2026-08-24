@@ -1,0 +1,19 @@
+Copying SIF container to node local storage (/tmp)...
+Starting tiling job: Fri Aug 14 12:07:25 CEST 2026
+Running on node: n37
+CPUs: 16
+nproc: 64
+BASE_PATH: /home/dechihao/Pathclip-zero-shot-classifier/WSI-Preprocessing
+SIF_PATH: /tmp/liver_preprocessing_arm64.sif
+Starting Apptainer container: Fri Aug 14 12:07:25 CEST 2026
+
+Processing slide: de531777-915c-47bc-a3fd-dc59c10b2e54-01Z-00-DX1.FCF4A7E7-A0F9-4B5D-B751-D990703EA261.svs for dataset
+Anonymous case ID: de531777-915c-47bc-a3fd-dc59c10b2e54
+Number of levels: 4
+Magnification X: 40
+Microns per pixel X: 0.25290000000000001
+TCGA-DD-A3A6-01Z-00-DX1.FCF4A7E7-A0F9-4B5D-B751-D990703EA261.svs took 0.02 seconds
+Parallel runtime: 0.08 seconds
+Dataset summary saved to: /home/dechihao/Pathclip-zero-shot-classifier/WSI-Preprocessing/output/slide_metadata/slides_metadata.csv and /home/dechihao/Pathclip-zero-shot-classifier/WSI-Preprocessing/output/slide_metadata/slides_metadata.pkl
+Finished: Fri Aug 14 12:07:26 CEST 2026
+Total time: 5 seconds

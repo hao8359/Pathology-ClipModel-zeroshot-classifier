@@ -1,0 +1,154 @@
+#!/bin/bash
+
+#SBATCH -A naiss2025-22-1584-gpu 
+#SBATCH -p gpu
+#SBATCH -N 1
+#SBATCH -c 16
+#SBATCH --gres=gpu:1
+#SBATCH --mem=64G
+#SBATCH -t 02:00:00
+#SBATCH -J liver_tiling
+#SBATCH -o logs/tiling_%j.out
+#SBATCH -e logs/tiling_%j.err
+
+set -euo pipefail
+
+echo "Starting tiling job: $(date)"
+echo "Running on node: $(hostname)"
+echo "TMPDIR=$TMPDIR"
+echo "CPUs: ${SLURM_CPUS_PER_TASK}"
+echo "nproc: $(nproc)"
+
+df -h "$TMPDIR"
+ls -ld "$TMPDIR"
+
+START=$SECONDS
+mkdir -p logs
+mkdir -p "$TMPDIR"
+mkdir -p "$TMPDIR/data"
+mkdir -p "$TMPDIR/output"
+
+BASE=/nobackup/proj/disk/deep-wetlands-data-2025/personal/pecorari/WSI-Preprocessing
+CODE=/nobackup/proj/disk/deep-wetlands-data-2025/personal/pecorari/WSI-Preprocessing/code
+
+echo "Copy start: $(date)"
+
+COPY_START=$(date +%s)
+
+cp -r "$BASE/code" "$TMPDIR"
+rsync -ah --info=progress2 "$BASE/data/svs" "$TMPDIR/data" # skips files that are identical
+rsync -ah "$BASE/output/slide_metadata/" "$TMPDIR/output/slide_metadata"
+
+COPY_END=$(date +%s)
+
+COPY_TIME=$((COPY_END-COPY_START))
+
+echo "Copy time: ${COPY_TIME} seconds"
+
+# Check copied directories
+echo "Checking copied directories:"
+ls -ld "$TMPDIR"
+
+# Catch errors early by checking if the directories exist
+test -d "$TMPDIR/code"
+test -d "$TMPDIR/data/svs"
+test -d "$BASE/output"
+
+#echo "Container start: $(date)"
+echo "Launching container: $(date +%s.%N)"
+t_launch=$(date +%s.%N)
+
+# Make sure bind-mount sources exist before Apptainer tries to mount them
+mkdir -p "$BASE/output"
+mkdir -p "$BASE/data/svs"
+
+mkdir -p "$TMPDIR/output"
+
+
+# Activate code profiling
+export LINE_PROFILE=0
+
+# Run container
+RAW_LOG="/tmp/container_raw_${SLURM_JOB_ID}.log"
+apptainer exec \
+  --bind "$TMPDIR:$TMPDIR" \
+  --env BASE_PATH=$TMPDIR \
+  --env OUTPUT_DIR=$BASE/output \
+  --env DATA_DIR=/data/svs \
+  --bind "$TMPDIR/data/svs:/data/svs" \
+  --bind "$TMPDIR/code:/code" \
+/nobackup/proj/disk/deep-wetlands-data-2025/personal/pecorari/WSI-Preprocessing/liver_preprocessing_arm64.sif \
+  bash -c "echo CONTAINER_ENTRY \$(date +%s.%N) && \
+cd /code && echo BEFORE_KERNPROF \$(date +%s.%N) && \
+kernprof -l -o profile_output.lprof -m src.preprocess.pipeline.week6_4 && \
+echo AFTER_KERNPROF \$(date +%s.%N) && \
+python -m line_profiler -rtmz profile_output.lprof && \
+echo AFTER_REPORT \$(date +%s.%N)" \
+  > "$RAW_LOG" 2>&1 #combine strerr and stdout 1 is stdout
+
+# use grep to search in a file and clean the output
+grep -Ev '^(CONTAINER_ENTRY|BEFORE_KERNPROF|AFTER_KERNPROF|AFTER_REPORT|Timer unit|Wrote profile|Inspect results|python -m line_profiler)' "$RAW_LOG" || true
+
+t_container_done=$(date +%s.%N)
+echo "Container total wall time: $(echo "$t_container_done - $t_launch" | bc) seconds"
+
+# --- Extract tagged timestamps from the container log ---
+get_ts() { grep "^$1 " "/tmp/container_raw_${SLURM_JOB_ID}.log" | tail -1 | awk '{print $2}'; }
+get_first_ts() {
+    awk -v tag="$1" '$1==tag {print $2; exit}' "$RAW_LOG"
+}
+
+t_container_entry=$(get_ts CONTAINER_ENTRY)
+t_before_kernprof=$(get_ts BEFORE_KERNPROF)
+t_after_kernprof=$(get_ts AFTER_KERNPROF)
+t_after_report=$(get_ts AFTER_REPORT)
+t_python_entry=$(get_first_ts PYTHON_ENTRY)
+t_imports_done=$(get_first_ts IMPORTS_DONE)
+t_pipeline_start=$(get_ts PIPELINE_START)
+t_pipeline_done=$(get_ts PIPELINE_DONE)
+
+# --- Print a formatted duration table ---
+echo ""
+echo "=================== TIMING SUMMARY ==================="
+awk -v a="$t_launch" -v b="$t_container_entry" \
+  'BEGIN{printf "%-45s %10.3f s\n", "Apptainer startup", b-a}'
+awk -v a="$t_container_entry" -v b="$t_before_kernprof" \
+    'BEGIN{printf "%-45s %10.3f s\n", "Shell setup (cd, echo)", b-a}'
+awk -v a="$t_python_entry" -v b="$t_imports_done" \
+  'BEGIN{printf "%-45s %10.3f s\n", "Python imports", b-a}'
+awk -v a="$t_pipeline_start" -v b="$t_pipeline_done" \
+  'BEGIN{printf "%-45s %10.3f s\n", "Pipeline execution", b-a}'
+awk -v a="$t_before_kernprof" -v b="$t_after_kernprof" \
+  'BEGIN{printf "%-45s %10.3f s\n", "kernprof + pipeline execution", b-a}'
+awk -v a="$t_after_kernprof" -v b="$t_after_report" \
+  'BEGIN{printf "%-45s %10.3f s\n", "line_profiler report generation", b-a}'
+awk -v a="$t_launch" -v b="$t_container_done" \
+  'BEGIN{printf "%-45s %10.3f s\n", "CONTAINER TOTAL", b-a}'
+echo "========================================================"
+echo ""
+
+echo "Copying results back:"
+COPY_START=$(date +%s)
+
+mkdir -p "$BASE/output"
+
+if [ -d "$TMPDIR/output" ]; then
+    JOBS=$(nproc)
+    cd "$TMPDIR/output" || exit 1
+
+    find . -mindepth 1 -maxdepth 1 -print0 | \
+        xargs -0 -P "$JOBS" -I{} \
+        bash -c 'tar -cf - "$1" | tar -C "$2/output" -xf -' _ {} "$BASE"
+else
+    echo "ERROR: $TMPDIR/output does not exist"
+    exit 1
+fi       
+
+COPY_END=$(date +%s)
+
+COPY_TIME=$((COPY_END-COPY_START))
+
+echo "Copy time: ${COPY_TIME} seconds"
+echo "Total time: $((SECONDS - START)) seconds"
+
+  # bash -c "cd /code && kernprof -l -o profile_output.lprof -m src.preprocess.pipeline.week6_4 && python -m line_profiler -rtmz profile_output.lprof"

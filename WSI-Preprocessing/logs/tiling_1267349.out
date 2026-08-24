@@ -1,0 +1,27 @@
+Copying code + metadata: Fri Aug 14 14:07:10 CEST 2026
+Copy time: 0 seconds
+Copying SIF container to node local storage (/tmp)...
+PYTHON_ENTRY 1786709234.4277287
+BEFORE IMPORTS 1786709234.9058409
+IMPORTS_DONE 1786709236.397044
+PIPELINE_START 1786709236.397331
+
+Processing slide: de531777-915c-47bc-a3fd-dc59c10b2e54
+Saved 101002 tiles and metadata to /tmp/output/pipeline/de531777-915c-47bc-a3fd-dc59c10b2e54-01Z-00-DX1.FCF4A7E7-A0F9-4B5D-B751-D990703EA261.svs/tiles/de531777-915c-47bc-a3fd-dc59c10b2e54_tiles.json
+Finished: de531777-915c-47bc-a3fd-dc59c10b2e54
+Tiles saved: 101002 / 134609
+Metadata CSV: /tmp/output/pipeline/de531777-915c-47bc-a3fd-dc59c10b2e54-01Z-00-DX1.FCF4A7E7-A0F9-4B5D-B751-D990703EA261.svs/tiles/tiles_metadata.csv
+ Slide time: 16.83 seconds
+[blur_fast] Scanning tiles under: /tmp/output/pipeline/de531777-915c-47bc-a3fd-dc59c10b2e54-01Z-00-DX1.FCF4A7E7-A0F9-4B5D-B751-D990703EA261.svs/tiles
+[blur_fast] Output CSV: /tmp/output/pipeline/de531777-915c-47bc-a3fd-dc59c10b2e54-01Z-00-DX1.FCF4A7E7-A0F9-4B5D-B751-D990703EA261.svs/tiles/blur_results.csv
+[blur_fast] THRESH_TENENGRAD=4500.0 | THRESH_LAPLACIAN=110.0 | THRESH_TISSUE_BLUR=0.3
+[blur_fast] Found 101002 tiles.
+[blur_fast] Finished! CSV saved to: /tmp/output/pipeline/de531777-915c-47bc-a3fd-dc59c10b2e54-01Z-00-DX1.FCF4A7E7-A0F9-4B5D-B751-D990703EA261.svs/tiles/blur_results.csv
+[blur_fast] Total: 101002 | Sharp: 100865 | Blurry: 137 | Timed out: 0
+Copying /tmp/output/pipeline/de531777-915c-47bc-a3fd-dc59c10b2e54-01Z-00-DX1.FCF4A7E7-A0F9-4B5D-B751-D990703EA261.svs/tiles
+      -> /home/dechihao/Pathclip-zero-shot-classifier/WSI-Preprocessing/output/pipeline/de531777-915c-47bc-a3fd-dc59c10b2e54-01Z-00-DX1.FCF4A7E7-A0F9-4B5D-B751-D990703EA261.svs/tiles
+
+TOTAL PIPELINE TIME: 290.22 seconds
+PIPELINE_DONE 1786709526.6139946
+Finished: Fri Aug 14 14:12:07 CEST 2026
+Total time: 297 seconds
