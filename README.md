@@ -20,19 +20,19 @@ Pathclip-zero-shot-classifier/
 
 * **WSI Preprocessing**: Automated tissue detection, grid tiling (converting `.svs` to `.jpeg`), and blur filtering.
 * **Zero-Shot Pathology Evaluation**: Evaluates domain-specific vision-language CLIP models on digital pathology datasets (e.g., TCGA-LIHC) via prompt engineering.
-* **Statistically Rigorous Aggregations**: Supports **Global Mean**, **90th Percentile ($P_{90}$)**, **Log-Sum-Exp (LSE)** smooth-max pooling, and **Tumor Burden Ratio**.
+* **Statistically Rigorous Aggregations**: Supports **Global Mean**.
 * **HPC Containerization**: Fully integrated with Slurm and Apptainer/Singularity, utilizing `$TMPDIR` node-local SSD storage for fast I/O throughput.
 * **Experiment Tracking**: Synchronized logging via **Weights & Biases (W&B)**.
 
 ## 🛠️ Environment & Prerequisites
 
-### Requirements
-* **Apptainer / Singularity**
-* **NVIDIA GPU** with CUDA drivers
-* Python >= 3.10 (managed via `uv` or virtual environments)
-
 ### Environment Setup
 To initialize local dependencies for Apptainer execution:
 ```bash
 apptainer exec pathclip.sif python -m pip install "numpy<1.25" wandb "pandas<1.6.0" scikit-learn braceexpand webdataset --target .venv_arm
-
+```
+## Workflow
+1. OpenClip Fine-Tuning
+2. Preprocessing Whole Slide Images
+Convert Gigapixel .svs slides into tissue-only JPEG tiles.
+3. Zero-Shot Evaluation
