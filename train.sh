@@ -13,7 +13,7 @@ set -eo pipefail
 
 module load Apptainer 2>/dev/null || true
 
-export WANDB_API_KEY="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"
+export WANDB_API_KEY="${WANDB_API_KEY:?Please enter WANDB_API_KEY}"
 
 # 1. Copy SIF image to compute node local storage ($TMPDIR)
 echo "Copying SIF image to compute node local storage ($TMPDIR)..."
