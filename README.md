@@ -30,7 +30,7 @@ This project explores whether a general-purpose vision-language model, fine-tune
 
 ## Key features
 
-- **WSI preprocessing** — automated tissue detection, grid-based tiling (`.svs` → `.jpeg`), and blur filtering to discard low-information tiles.
+- **WSI preprocessing** — automated tissue detection, grid-based tiling (`.svs` → `.jpeg`), and blur filtering to discard low-information tiles. 
 - **Domain fine-tuning** — continues pretraining from OpenAI's CLIP ViT-B/16 weights on pathology-specific image–caption pairs using [OpenCLIP](https://github.com/mlfoundations/open_clip).
 - **Zero-shot evaluation** — classifies unseen tissue via natural-language prompt engineering, without any task-specific fine-tuning.
 - **Global-mean aggregation** — pools tile-level prediction scores for more stable, slide-level results.
@@ -43,6 +43,8 @@ This project explores whether a general-purpose vision-language model, fine-tune
 ```text
 Pathology-ClipModel-zeroshot-classifier/
 ├── WSI-Preprocessing/     # Slide tiling, tissue masking, and blur-filtering pipeline
+│                          #   → pipeline guide: WSI-Preprocessing/docs/pipeline_guide.pdf (by Francesca Pecorari)
+                            
 ├── zero-shot_eval/        # Zero-shot evaluation scripts (e.g. tcga_liver.py)
 ├── logs/                  # Slurm job logs and W&B run artifacts
 ├── Dockerfile             # NVIDIA NGC PyTorch-based container image
@@ -177,6 +179,7 @@ This project is licensed under the [MIT License](LICENSE) — see the `LICENSE` 
 - The authors of **PathCap** / PathAsst, for the pathology image–caption dataset.
 - The [OpenCLIP](https://github.com/mlfoundations/open_clip) maintainers.
 - Compute resources provided via **NAISS** (National Academic Infrastructure for Supercomputing in Sweden).
+- **Francesca Pecorari**, for developing the WSI-Preprocessing pipeline and its accompanying [pipeline guide](WSI-Preprocessing/docs/pipeline_guide.pdf).
 
 ## Contact
 
