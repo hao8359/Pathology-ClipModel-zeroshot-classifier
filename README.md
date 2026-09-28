@@ -44,7 +44,6 @@ This project explores whether a general-purpose vision-language model, fine-tune
 Pathology-ClipModel-zeroshot-classifier/
 ├── WSI-Preprocessing/     # Slide tiling, tissue masking, and blur-filtering pipeline
 │                          #   → pipeline guide: WSI-Preprocessing/docs/pipeline_guide.pdf (by Francesca Pecorari)
-                            
 ├── zero-shot_eval/        # Zero-shot evaluation scripts (e.g. tcga_liver.py)
 ├── logs/                  # Slurm job logs and W&B run artifacts
 ├── Dockerfile             # NVIDIA NGC PyTorch-based container image
